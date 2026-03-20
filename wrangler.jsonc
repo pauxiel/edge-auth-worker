@@ -7,12 +7,16 @@
 	"name": "edge-auth-worker",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-03-10",
+	"workers_dev": true,
 	"observability": {
 		"enabled": true
 	},
 	"compatibility_flags": [
 		"nodejs_compat"
-	]
+	],
+	"ai": {
+		"binding": "AI"
+	}
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

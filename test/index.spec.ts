@@ -1,24 +1,82 @@
-import { env, createExecutionContext, waitOnExecutionContext, SELF } from 'cloudflare:test';
-import { describe, it, expect } from 'vitest';
+import { createExecutionContext, waitOnExecutionContext } from 'cloudflare:test';
+import { describe, it, expect, vi } from 'vitest';
 import worker from '../src/index';
+import type { Env } from '../src/types';
 
-// For now, you'll need to do something like this to get a correctly-typed
-// `Request` to pass to `worker.fetch()`.
+// Mock Neon and Anthropic so tests don't need real credentials
+vi.mock('@neondatabase/serverless', () => ({
+  neon: () => async () => [],
+}));
+
+vi.mock('../src/lib/ai', () => ({
+  runSecurityAudit: async () => 'No issues found.',
+}));
+
+// Mock verifyToken so we can control its output
+vi.mock('../src/lib/auth', () => ({
+  verifyToken: async (token: string) => {
+    if (token === 'valid-token') {
+      return {
+        id: 'user-123',
+        email: 'test@example.com',
+        token,
+        expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
+      };
+    }
+    throw new Error('Invalid token');
+  },
+}));
+
+vi.mock('../src/lib/session', () => ({
+  storeSession: async () => {},
+}));
+
+const mockEnv: Env = {
+  JWT_SECRET: 'test-secret',
+  DATABASE_URL: 'postgresql://test',
+  AI: {} as Ai,
+};
+
 const IncomingRequest = Request<unknown, IncomingRequestCfProperties>;
 
-describe('Hello World worker', () => {
-	it('responds with Hello World! (unit style)', async () => {
-		const request = new IncomingRequest('http://example.com');
-		// Create an empty context to pass to `worker.fetch()`.
-		const ctx = createExecutionContext();
-		const response = await worker.fetch(request, env, ctx);
-		// Wait for all `Promise`s passed to `ctx.waitUntil()` to settle before running test assertions
-		await waitOnExecutionContext(ctx);
-		expect(await response.text()).toMatchInlineSnapshot(`"Hello World!"`);
-	});
+describe('edge-auth-worker', () => {
+  it('returns 401 when no Authorization header', async () => {
+    const request = new IncomingRequest('http://example.com/');
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(request, mockEnv, ctx);
+    await waitOnExecutionContext(ctx);
+    expect(response.status).toBe(401);
+  });
 
-	it('responds with Hello World! (integration style)', async () => {
-		const response = await SELF.fetch('https://example.com');
-		expect(await response.text()).toMatchInlineSnapshot(`"Hello World!"`);
-	});
+  it('returns 401 for an invalid token', async () => {
+    const request = new IncomingRequest('http://example.com/', {
+      headers: { Authorization: 'Bearer bad-token' },
+    });
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(request, mockEnv, ctx);
+    await waitOnExecutionContext(ctx);
+    expect(response.status).toBe(401);
+  });
+
+  it('returns 200 with user JSON for a valid token', async () => {
+    const request = new IncomingRequest('http://example.com/', {
+      headers: { Authorization: 'Bearer valid-token' },
+    });
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(request, mockEnv, ctx);
+    await waitOnExecutionContext(ctx);
+    expect(response.status).toBe(200);
+    const body = await response.json() as { id: string; email: string };
+    expect(body.id).toBe('user-123');
+    expect(body.email).toBe('test@example.com');
+  });
+
+  it('GET /audit returns AI security review', async () => {
+    const request = new IncomingRequest('http://example.com/audit');
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(request, mockEnv, ctx);
+    await waitOnExecutionContext(ctx);
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe('No issues found.');
+  });
 });

@@ -1,7 +1,15 @@
 {
 	"name": "edge-auth-worker",
-	"version": "0.0.0",
-	"private": true,
+	"version": "1.0.0",
+	"description": "JWT auth at the edge — Cloudflare Workers + Neon Postgres + Worker AI. No cold starts, no API keys.",
+	"private": false,
+	"keywords": ["cloudflare-workers", "jwt", "auth", "edge", "neon", "serverless", "worker-ai"],
+	"author": "Paulo Bayuwana",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/paulobayuwana/edge-auth-worker"
+	},
 	"scripts": {
 		"deploy": "wrangler deploy",
 		"dev": "wrangler dev",
@@ -10,10 +18,14 @@
 		"cf-typegen": "wrangler types"
 	},
 	"devDependencies": {
-		"@cloudflare/vitest-pool-workers": "^0.12.4",
+		"@cloudflare/vitest-pool-workers": "^0.8.71",
 		"@types/node": "^25.5.0",
 		"typescript": "^5.5.2",
 		"vitest": "~3.2.0",
-		"wrangler": "^4.73.0"
+		"wrangler": "^4.35.0"
+	},
+	"dependencies": {
+		"@neondatabase/serverless": "^1.0.2",
+		"@tsndr/cloudflare-worker-jwt": "^3.2.1"
 	}
 }
