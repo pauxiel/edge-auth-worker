@@ -8,7 +8,7 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/paulobayuwana/edge-auth-worker"
+		"url": "https://github.com/pauxiel/edge-auth-worker"
 	},
 	"scripts": {
 		"deploy": "wrangler deploy",

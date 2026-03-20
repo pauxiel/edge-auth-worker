@@ -11,7 +11,7 @@ JWT authentication at the edge using Cloudflare Workers, Neon Postgres, and Clou
 ## Deploy your own in one command
 
 ```bash
-npx create-cloudflare@latest my-auth-worker --template paulobayuwana/edge-auth-worker
+npx create-cloudflare@latest my-auth-worker --template pauxiel/edge-auth-worker
 ```
 
 Then add your secrets:
@@ -30,7 +30,7 @@ That's it.
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/paulobayuwana/edge-auth-worker
+git clone https://github.com/pauxiel/edge-auth-worker
 cd edge-auth-worker
 npm install
 ```
